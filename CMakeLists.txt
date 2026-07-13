@@ -12,9 +12,20 @@ endif()
 
 project(app VERSION 0.1.0 LANGUAGES CXX)
 
+# Project options
+option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)
+
 # Modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(cmake/compiler_options.cmake)
+include(CTest)
+
+if(ENABLE_COVERAGE)
+  if(NOT BUILD_TESTING)
+    message(FATAL_ERROR "ENABLE_COVERAGE requires BUILD_TESTING=ON")
+  endif()
+  include(cmake/code_coverage.cmake)
+endif()
 
 # Collect all sources under src/
 file(GLOB_RECURSE APP_SOURCES
@@ -35,7 +46,6 @@ target_link_libraries(app PRIVATE app_lib)
 include(cmake/clang_format.cmake)
 
 # ---- Tests ----
-include(CTest)
 if(BUILD_TESTING)
   include(FetchContent)
   # Prefer an up-to-date GoogleTest
@@ -87,18 +97,12 @@ if(BUILD_TESTING)
     USES_TERMINAL
   )
 
-  # Coverage
-  include(cmake/code_coverage.cmake)
-  option(ENABLE_COVERAGE "Enable code coverage flags for GCC/Clang" OFF)
+  # Coverage is deliberately limited to first-party targets.
   if(ENABLE_COVERAGE)
-    message(STATUS "Coverage: enabled")
     enable_coverage_for_target(app_lib)
     enable_coverage_for_target(app_tests)
-    enable_coverage_for_target(app)
-  else()
-    message(STATUS "Coverage: disabled (set -DENABLE_COVERAGE=ON to enable)")
+    add_coverage_targets(TEST_TARGET app_tests)
   endif()
-  add_coverage_targets(TEST_COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 
 endif()
 

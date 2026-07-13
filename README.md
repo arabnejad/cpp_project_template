@@ -18,6 +18,7 @@ cmake/          # CMake helper modules
   compiler_options.cmake
   clang_format.cmake
   code_coverage.cmake
+  coverage/     # Platform selectors and compiler-specific coverage backends
   clean_all.cmake
 CMakeLists.txt  # Root build configuration
 ```
@@ -66,22 +67,71 @@ cmake --build build --target clang_format
 
 ## Code coverage (optional)
 
-If you have `gcovr` installed and are using GCC or Clang, you can generate coverage reports.
-Enable coverage flags at configure time:
+Coverage requires tests and a separate Debug build. The required reporting tools
+depend on the compiler:
+
+| Compiler | Coverage tools |
+| --- | --- |
+| GCC, including MinGW | Matching `gcov` and `gcovr` |
+| Clang or AppleClang | Matching `llvm-profdata` and `llvm-cov` |
+| MSVC or ClangCL | `Microsoft.CodeCoverage.Console` and `reportgenerator` |
+
+Coverage module layout:
+
+```text
+cmake/
+├── code_coverage.cmake        # 58-line public dispatcher
+└── coverage/
+    ├── linux.cmake            # Linux compiler selection
+    ├── macos.cmake            # macOS compiler selection
+    ├── windows.cmake          # Windows compiler selection
+    ├── gcov.cmake             # GCC implementation
+    ├── llvm.cmake             # Clang/AppleClang implementation
+    ├── msvc.cmake             # MSVC/ClangCL implementation
+    └── merge_llvm_profiles.cmake
+```
+
+On macOS, the LLVM tools supplied by Xcode are discovered through `xcrun` when they
+are not directly available on `PATH`. On Windows, run CMake from a Visual Studio
+Developer Command Prompt. ReportGenerator can be installed with
+`dotnet tool install --global dotnet-reportgenerator-globaltool`.
+
+For a single-configuration generator, configure coverage with:
 
 ```bash
-cmake -S . -B build -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build-coverage \
+  -DBUILD_TESTING=ON \
+  -DENABLE_COVERAGE=ON \
+  -DCMAKE_BUILD_TYPE=Debug
 ```
 
 Then generate reports:
 
 ```bash
 # Console summary
-cmake --build build --target gcovr_console
+cmake --build build-coverage --target gcovr_console
 
-# HTML report in build/coverage/index.html
-cmake --build build --target gcovr_html
+# HTML report in build-coverage/coverage/index.html
+cmake --build build-coverage --target gcovr_html
 ```
+
+The historical target names are retained on every platform even when the active
+backend is LLVM or Microsoft Code Coverage. Multi-configuration generators such as
+Visual Studio and Xcode must select Debug explicitly:
+
+```bash
+cmake -S . -B build-coverage -DBUILD_TESTING=ON -DENABLE_COVERAGE=ON
+cmake --build build-coverage --config Debug --target gcovr_console
+cmake --build build-coverage --config Debug --target gcovr_html
+```
+
+Coverage-tool documentation:
+
+- [Clang source-based code coverage](https://clang.llvm.org/docs/SourceBasedCodeCoverage.html)
+- [llvm-profdata command reference](https://llvm.org/docs/CommandGuide/llvm-profdata.html)
+- [llvm-cov command reference](https://llvm.org/docs/CommandGuide/llvm-cov.html)
+- [Microsoft C++ Code Coverage Console](https://learn.microsoft.com/en-us/visualstudio/test/microsoft-code-coverage-console-tool)
+- [ReportGenerator documentation and source](https://github.com/danielpalme/ReportGenerator)
 
 ## Cleaning
 
