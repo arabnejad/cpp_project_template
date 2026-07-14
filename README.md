@@ -14,12 +14,14 @@ src/            # Sources for the app and library
 tests/          # Unit tests (GoogleTest)
   main.cpp
   test_math_class.cpp
+  cmake/
+    test_distclean.cmake
 cmake/          # CMake helper modules
   compiler_options.cmake
   clang_format.cmake
   code_coverage.cmake
   coverage/     # Platform selectors and compiler-specific coverage backends
-  clean_all.cmake
+  distclean.cmake
 CMakeLists.txt  # Root build configuration
 ```
 
@@ -135,11 +137,40 @@ Coverage-tool documentation:
 
 ## Cleaning
 
-Remove all detectable CMake build directories under the repository (e.g., `build`, `cmake-build-*`, etc.):
+Remove compiled output from one configured build tree while keeping its CMake
+configuration:
 
 ```bash
-cmake --build build --target clean_all
+cmake --build build --target clean
 ```
+
+To remove selected build trees completely, invoke the guarded distclean script from
+the project root. Only explicit, top-level directories named `build`, `build-*`, or
+`cmake-build-*` are accepted:
+
+```bash
+cmake -DPROJECT_ROOT=. \
+  "-DBUILD_DIRS=build;build-coverage;build-sanitizers" \
+  -P cmake/distclean.cmake
+```
+
+The script rejects the project root, nested paths, symbolic links, and names such as
+`bin`, `out`, `src`, `.cache`, or `.cmake`. Existing targets must also contain a
+`CMakeCache.txt` file or `CMakeFiles` directory before they can be removed.
+
+### Distclean safety test
+
+`tests/cmake/test_distclean.cmake` is an automated regression test for the
+destructive operation above. It creates an isolated fixture inside the active
+build tree, then verifies that selected CMake build directories are removed while
+`bin`, `out`, and `src` remain untouched. It also confirms that an explicit request
+to remove `src` fails without changing that directory.
+
+This is a CMake script test rather than a GoogleTest test because the behavior under
+test is a standalone CMake script and does not involve the C++ application. CTest
+runs it with the rest of the test suite. The fixture never references the real
+source tree and is deleted after a successful test. Its purpose is to prevent a
+future refactor from reintroducing an unrestricted recursive deletion.
 
 ## Notes
 

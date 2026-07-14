@@ -86,6 +86,13 @@ if(BUILD_TESTING)
     DISCOVERY_TIMEOUT 60
   )
 
+  add_test(NAME distclean_safety
+    COMMAND ${CMAKE_COMMAND}
+      -DDISTCLEAN_SCRIPT=${CMAKE_SOURCE_DIR}/cmake/distclean.cmake
+      -DTEST_ROOT=${CMAKE_BINARY_DIR}/distclean-safety-fixture
+      -P ${CMAKE_SOURCE_DIR}/tests/cmake/test_distclean.cmake
+  )
+
   # Convenience target to "build tests"
   add_custom_target(tests DEPENDS app_tests)
 
@@ -105,16 +112,3 @@ if(BUILD_TESTING)
   endif()
 
 endif()
-
-# ---- Utilities ----
-# Clean all build trees found inside the repo
-add_custom_target(clean_all
-  COMMAND ${CMAKE_COMMAND}
-          -DROOT=${CMAKE_SOURCE_DIR}
-          -DBUILD_DIR=${CMAKE_BINARY_DIR}   # pass the active build tree
-          -P ${CMAKE_SOURCE_DIR}/cmake/clean_all.cmake
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Remove ALL CMake-generated build directories under the source tree"
-  USES_TERMINAL
-  VERBATIM
-)
