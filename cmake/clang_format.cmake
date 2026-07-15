@@ -33,17 +33,31 @@ endforeach()
 
 if(NOT CLANG_FORMAT_EXE)
   add_custom_target(clang_format
-    COMMAND ${CMAKE_COMMAND} -E echo "clang-format not found; skipping format step."
-    COMMENT "clang-format not available")
+    COMMAND ${CMAKE_COMMAND} -E echo
+      "clang-format is required for the clang_format target."
+    COMMAND ${CMAKE_COMMAND} -E false
+    COMMENT "clang-format not available"
+  )
+  add_custom_target(clang_format_check
+    COMMAND ${CMAKE_COMMAND} -E echo
+      "clang-format is required for the clang_format_check target."
+    COMMAND ${CMAKE_COMMAND} -E false
+    COMMENT "clang-format not available"
+  )
 else()
   set(CLANG_FORMAT_CANDIDATES)
+  set(CLANG_FORMAT_CHECK_CANDIDATES)
   foreach(_file IN LISTS ALL_CXX_SOURCE_FILES)
     # Relative path for logging
     file(RELATIVE_PATH REL "${CMAKE_SOURCE_DIR}" "${_file}")
     file(TO_CMAKE_PATH "${REL}" REL)
     list(APPEND CLANG_FORMAT_CANDIDATES
-      COMMAND ${CMAKE_COMMAND} -E echo "run clang-formater on ${REL}"
+      COMMAND ${CMAKE_COMMAND} -E echo "Run clang-format on ${REL}"
       COMMAND ${CLANG_FORMAT_EXE} -i "${_file}"
+    )
+    list(APPEND CLANG_FORMAT_CHECK_CANDIDATES
+      COMMAND ${CMAKE_COMMAND} -E echo "Check clang-format on ${REL}"
+      COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror "${_file}"
     )
   endforeach()
 
@@ -55,10 +69,22 @@ else()
       VERBATIM
       USES_TERMINAL
     )
+    add_custom_target(clang_format_check
+      ${CLANG_FORMAT_CHECK_CANDIDATES}
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      COMMENT "Checking clang-format on source files"
+      VERBATIM
+      USES_TERMINAL
+    )
   else()
     add_custom_target(clang_format
       COMMAND ${CMAKE_COMMAND} -E echo "clang-format: no files matched; nothing to do."
       COMMENT "clang-format (no-op)"
+    )
+    add_custom_target(clang_format_check
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "clang-format: no files matched; nothing to check."
+      COMMENT "clang-format check (no-op)"
     )
   endif()
 endif()

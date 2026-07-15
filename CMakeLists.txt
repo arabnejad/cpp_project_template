@@ -14,6 +14,14 @@ project(app VERSION 0.1.0 LANGUAGES CXX)
 
 # Project options
 option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)
+option(ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+
+if(ENABLE_COVERAGE AND ENABLE_SANITIZERS)
+  message(FATAL_ERROR
+    "Coverage and sanitizers must use separate build directories. Enable only "
+    "one of ENABLE_COVERAGE or ENABLE_SANITIZERS in a configuration."
+  )
+endif()
 
 # Modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -27,6 +35,10 @@ if(ENABLE_COVERAGE)
   include(cmake/code_coverage.cmake)
 endif()
 
+if(ENABLE_SANITIZERS)
+  include(cmake/sanitizers.cmake)
+endif()
+
 # Collect all sources under src/
 file(GLOB_RECURSE APP_SOURCES
     CONFIGURE_DEPENDS
@@ -37,13 +49,28 @@ list(FILTER APP_SOURCES EXCLUDE REGEX "/main\\.cpp$")
 # Library with the app logic (no hardcoded files)
 add_library(app_lib ${APP_SOURCES})
 target_include_directories(app_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
+if(ENABLE_SANITIZERS)
+  enable_sanitizers_for_target(app_lib)
+endif()
 
 # Executable
 add_executable(app "${CMAKE_SOURCE_DIR}/src/main.cpp")
 target_link_libraries(app PRIVATE app_lib)
+if(ENABLE_SANITIZERS)
+  enable_sanitizers_for_target(app)
+endif()
+
+add_custom_target(run
+  COMMAND $<TARGET_FILE:app>
+  DEPENDS app
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  USES_TERMINAL
+  VERBATIM
+)
 
 # Formatting
 include(cmake/clang_format.cmake)
+include(cmake/cppcheck.cmake)
 
 # ---- Tests ----
 if(BUILD_TESTING)
@@ -65,6 +92,9 @@ if(BUILD_TESTING)
 
   add_executable(app_tests ${TEST_SOURCES})
   target_link_libraries(app_tests PRIVATE app_lib)
+  if(ENABLE_SANITIZERS)
+    enable_sanitizers_for_target(app_tests)
+  endif()
 
   # If tests/main.cpp exists, use your main; otherwise gtest's main
   set(HAS_CUSTOM_TEST_MAIN OFF)
