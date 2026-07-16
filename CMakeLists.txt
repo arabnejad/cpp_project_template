@@ -39,14 +39,15 @@ if(ENABLE_SANITIZERS)
   include(cmake/sanitizers.cmake)
 endif()
 
-# Collect all sources under src/
+# Collect application sources automatically. CONFIGURE_DEPENDS asks CMake to
+# recheck the glob during builds so newly added or removed .cpp files trigger
+# regeneration on supported generators.
 file(GLOB_RECURSE APP_SOURCES
     CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/src/*.cpp"
 )
-# Exclude the application entry point from the library
+# Exclude the application entry point from the library.
 list(FILTER APP_SOURCES EXCLUDE REGEX "/main\\.cpp$")
-# Library with the app logic (no hardcoded files)
 add_library(app_lib ${APP_SOURCES})
 target_include_directories(app_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
 if(ENABLE_SANITIZERS)
@@ -84,7 +85,7 @@ if(BUILD_TESTING)
   )
   FetchContent_MakeAvailable(googletest)
 
-  # Collect all test sources automatically
+  # New test translation units are picked up without editing this file.
   file(GLOB_RECURSE TEST_SOURCES
       CONFIGURE_DEPENDS
       "${CMAKE_SOURCE_DIR}/tests/*.cpp"
@@ -96,10 +97,10 @@ if(BUILD_TESTING)
     enable_sanitizers_for_target(app_tests)
   endif()
 
-  # If tests/main.cpp exists, use your main; otherwise gtest's main
+  # Use a project-provided test main when present; otherwise use GoogleTest's.
   set(HAS_CUSTOM_TEST_MAIN OFF)
-  foreach(_f IN LISTS TEST_SOURCES)
-    if(_f MATCHES "/tests/main\\.cpp$")
+  foreach(_file IN LISTS TEST_SOURCES)
+    if(_file MATCHES "/tests/main\\.cpp$")
       set(HAS_CUSTOM_TEST_MAIN ON)
       break()
     endif()
