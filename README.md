@@ -76,6 +76,26 @@ cmake --build build --target app
 
 The `app` executable is built from `src/main.cpp` and links a small library (`app_lib`) that contains the `MATH` class.
 
+## Compiler settings
+
+The template uses C++17 as its baseline. C++17 provides a modern standard-library
+and language foundation while retaining broad support across GCC, Clang,
+AppleClang, and MSVC. The requirement is expressed with CMake target compile
+features and is propagated by the `app::app_lib` target; it is not imposed through
+directory-wide compiler flags.
+
+Warning options are private to the first-party library, application, and test
+targets, so they do not affect GoogleTest or other dependencies. Warnings are not
+errors by default. Enable that policy explicitly when required, such as in CI:
+
+```bash
+cmake -S . -B build -DWARNINGS_AS_ERRORS=ON
+```
+
+GCC, Clang, and AppleClang use `-Wall`, `-Wextra`, `-Wpedantic`, `-Wconversion`,
+and `-Wsign-conversion`; warnings-as-errors adds `-Werror`. MSVC-compatible
+frontends use `/W4` and `/permissive-`; warnings-as-errors adds `/WX`.
+
 ## Run
 
 ```bash

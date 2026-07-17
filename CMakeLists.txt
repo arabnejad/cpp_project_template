@@ -15,6 +15,7 @@ project(app VERSION 0.1.0 LANGUAGES CXX)
 # Project options
 option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)
 option(ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(WARNINGS_AS_ERRORS "Treat first-party compiler warnings as errors" OFF)
 
 if(ENABLE_COVERAGE AND ENABLE_SANITIZERS)
   message(FATAL_ERROR
@@ -49,7 +50,9 @@ file(GLOB_RECURSE APP_SOURCES
 # Exclude the application entry point from the library.
 list(FILTER APP_SOURCES EXCLUDE REGEX "/main\\.cpp$")
 add_library(app_lib ${APP_SOURCES})
+add_library(app::app_lib ALIAS app_lib)
 target_include_directories(app_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
+apply_project_compiler_settings(app_lib PUBLIC)
 if(ENABLE_SANITIZERS)
   enable_sanitizers_for_target(app_lib)
 endif()
@@ -57,6 +60,7 @@ endif()
 # Executable
 add_executable(app "${CMAKE_SOURCE_DIR}/src/main.cpp")
 target_link_libraries(app PRIVATE app_lib)
+apply_project_compiler_settings(app PRIVATE)
 if(ENABLE_SANITIZERS)
   enable_sanitizers_for_target(app)
 endif()
@@ -93,6 +97,7 @@ if(BUILD_TESTING)
 
   add_executable(app_tests ${TEST_SOURCES})
   target_link_libraries(app_tests PRIVATE app_lib)
+  apply_project_compiler_settings(app_tests PRIVATE)
   if(ENABLE_SANITIZERS)
     enable_sanitizers_for_target(app_tests)
   endif()
