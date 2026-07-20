@@ -96,6 +96,27 @@ GCC, Clang, and AppleClang use `-Wall`, `-Wextra`, `-Wpedantic`, `-Wconversion`,
 and `-Wsign-conversion`; warnings-as-errors adds `-Werror`. MSVC-compatible
 frontends use `/W4` and `/permissive-`; warnings-as-errors adds `/WX`.
 
+## Using the library as a subproject
+
+The library can be embedded in another CMake build and consumed through its
+namespaced target:
+
+```cmake
+add_subdirectory(path/to/cpp_project_template)
+target_link_libraries(your_target PRIVATE app::app_lib)
+```
+
+When embedded, the project adds only `app_lib` and its `app::app_lib` alias. It
+does not add the sample application, tests, GoogleTest download, coverage or
+sanitizer configuration, or the run, formatting, and cppcheck targets. Parent
+values named `BUILD_TESTING`, `ENABLE_COVERAGE`, `ENABLE_SANITIZERS`, or
+`WARNINGS_AS_ERRORS` are left unchanged and do not enable this project's developer
+features.
+
+The minimum supported CMake version remains 3.16. Because that version predates
+`PROJECT_IS_TOP_LEVEL`, the project uses an equivalent comparison between its
+project source directory and CMake's top-level source directory.
+
 ## Run
 
 ```bash

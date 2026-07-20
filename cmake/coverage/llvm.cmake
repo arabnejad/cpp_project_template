@@ -70,7 +70,7 @@ function(add_coverage_targets)
   coverage_validate_test_target("${COV_TEST_TARGET}")
   coverage_get_ctest_args(COVERAGE_CTEST_ARGS)
 
-  set(COVERAGE_DIR "${CMAKE_BINARY_DIR}/coverage")
+  set(COVERAGE_DIR "${PROJECT_BINARY_DIR}/coverage")
   set(LLVM_RAW_PROFILE_DIR "${COVERAGE_DIR}/raw")
   set(LLVM_PROFILE_DATA "${COVERAGE_DIR}/coverage.profdata")
   set(LLVM_IGNORE_REGEX "(tests|_deps)")
@@ -93,10 +93,10 @@ function(add_coverage_targets)
       "$<TARGET_FILE:${COV_TEST_TARGET}>"
       "-instr-profile=${LLVM_PROFILE_DATA}"
       "-ignore-filename-regex=${LLVM_IGNORE_REGEX}"
-      "${CMAKE_SOURCE_DIR}/src"
-      "${CMAKE_SOURCE_DIR}/include"
+      "${PROJECT_SOURCE_DIR}/src"
+      "${PROJECT_SOURCE_DIR}/include"
     DEPENDS ${COV_TEST_TARGET}
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
     COMMENT "Run tests and generate the console coverage report with llvm-cov"
@@ -110,10 +110,10 @@ function(add_coverage_targets)
       "-ignore-filename-regex=${LLVM_IGNORE_REGEX}"
       -format=html
       "-output-dir=${COVERAGE_DIR}"
-      "${CMAKE_SOURCE_DIR}/src"
-      "${CMAKE_SOURCE_DIR}/include"
+      "${PROJECT_SOURCE_DIR}/src"
+      "${PROJECT_SOURCE_DIR}/include"
     DEPENDS ${COV_TEST_TARGET}
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
     COMMENT "Run tests and generate coverage/index.html with llvm-cov"

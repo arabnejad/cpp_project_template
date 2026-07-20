@@ -6,13 +6,6 @@
 # The visibility controls whether the C++17 requirement is propagated to
 # consumers. Warning options always remain private to the selected target.
 
-# Default build type if not specified
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "No build type selected, defaulting to Release")
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
-endif()
-
 function(apply_project_compiler_settings target_name standard_visibility)
   if(NOT TARGET ${target_name})
     message(FATAL_ERROR

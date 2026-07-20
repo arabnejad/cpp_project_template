@@ -43,21 +43,21 @@ function(add_coverage_targets)
   coverage_validate_test_target("${COV_TEST_TARGET}")
   coverage_get_ctest_args(COVERAGE_CTEST_ARGS)
 
-  set(COVERAGE_DIR "${CMAKE_BINARY_DIR}/coverage")
+  set(COVERAGE_DIR "${PROJECT_BINARY_DIR}/coverage")
   set(COVERAGE_GCOVR_ARGS
     --gcov-executable "${GCOV_EXE}"
-    --root "${CMAKE_SOURCE_DIR}"
-    --filter "${CMAKE_SOURCE_DIR}/src/"
-    --filter "${CMAKE_SOURCE_DIR}/include/"
-    --exclude-directories "${CMAKE_BINARY_DIR}/_deps"
-    "${CMAKE_BINARY_DIR}"
+    --root "${PROJECT_SOURCE_DIR}"
+    --filter "${PROJECT_SOURCE_DIR}/src/"
+    --filter "${PROJECT_SOURCE_DIR}/include/"
+    --exclude-directories "${PROJECT_BINARY_DIR}/_deps"
+    "${PROJECT_BINARY_DIR}"
   )
 
   add_custom_target(gcovr_console
     COMMAND ${CMAKE_CTEST_COMMAND} ${COVERAGE_CTEST_ARGS}
     COMMAND ${GCOVR_EXE} ${COVERAGE_GCOVR_ARGS} --print-summary
     DEPENDS ${COV_TEST_TARGET}
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
     COMMENT "Run tests and generate the console coverage report with gcovr"
@@ -72,7 +72,7 @@ function(add_coverage_targets)
       --html-details
       --output "${COVERAGE_DIR}/index.html"
     DEPENDS ${COV_TEST_TARGET}
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
     COMMENT "Run tests and generate coverage/index.html with gcovr"

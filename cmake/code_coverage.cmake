@@ -35,7 +35,7 @@ endfunction()
 
 function(coverage_get_ctest_args output_variable)
   set(_ctest_args
-    --test-dir "${CMAKE_BINARY_DIR}"
+    --test-dir "${PROJECT_BINARY_DIR}"
     --output-on-failure
   )
   if(CMAKE_CONFIGURATION_TYPES)

@@ -3,10 +3,10 @@ find_program(CPPCHECK_EXE NAMES cppcheck)
 
 file(GLOB_RECURSE CPPCHECK_SOURCE_FILES
   CONFIGURE_DEPENDS
-  "${CMAKE_SOURCE_DIR}/include/*.h"
-  "${CMAKE_SOURCE_DIR}/include/*.hpp"
-  "${CMAKE_SOURCE_DIR}/src/*.cpp"
-  "${CMAKE_SOURCE_DIR}/tests/*.cpp"
+  "${PROJECT_SOURCE_DIR}/include/*.h"
+  "${PROJECT_SOURCE_DIR}/include/*.hpp"
+  "${PROJECT_SOURCE_DIR}/src/*.cpp"
+  "${PROJECT_SOURCE_DIR}/tests/*.cpp"
 )
 
 if(NOT CPPCHECK_EXE)
@@ -25,9 +25,9 @@ elseif(CPPCHECK_SOURCE_FILES)
       --language=c++
       --std=c++14
       --suppress=missingIncludeSystem
-      -I "${CMAKE_SOURCE_DIR}/include"
+      -I "${PROJECT_SOURCE_DIR}/include"
       ${CPPCHECK_SOURCE_FILES}
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     COMMENT "Running cppcheck on first-party source files"
     USES_TERMINAL
     VERBATIM

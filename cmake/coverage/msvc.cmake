@@ -56,10 +56,10 @@ function(add_coverage_targets)
   coverage_validate_test_target("${COV_TEST_TARGET}")
   coverage_get_ctest_args(COVERAGE_CTEST_ARGS)
 
-  set(COVERAGE_DIR "${CMAKE_BINARY_DIR}/coverage")
+  set(COVERAGE_DIR "${PROJECT_BINARY_DIR}/coverage")
   set(MS_COVERAGE_FILE "${COVERAGE_DIR}/coverage.cobertura.xml")
   set(MS_FILE_FILTERS
-    "+${CMAKE_SOURCE_DIR}/src/*;+${CMAKE_SOURCE_DIR}/include/*"
+    "+${PROJECT_SOURCE_DIR}/src/*;+${PROJECT_SOURCE_DIR}/include/*"
   )
   set(MS_COLLECT_COMMANDS
     COMMAND ${CMAKE_COMMAND} -E remove_directory "${COVERAGE_DIR}"
@@ -82,7 +82,7 @@ function(add_coverage_targets)
     COMMAND powershell -NoProfile -NonInteractive -Command
       "Get-Content -LiteralPath '${COVERAGE_DIR}/Summary.txt'"
     DEPENDS ${COV_TEST_TARGET}
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
     COMMENT "Run tests and generate the console coverage report with Microsoft Code Coverage"
@@ -99,7 +99,7 @@ function(add_coverage_targets)
       "${COVERAGE_DIR}/index.htm"
       "${COVERAGE_DIR}/index.html"
     DEPENDS ${COV_TEST_TARGET}
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
     COMMENT "Run tests and generate coverage/index.html with Microsoft Code Coverage"
