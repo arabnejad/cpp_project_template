@@ -12,7 +12,6 @@ src/            # Sources for the app and library
   app.cpp
   main.cpp
 tests/          # Unit tests (GoogleTest)
-  main.cpp
   test_math_class.cpp
   cmake/
     test_distclean.cmake
@@ -128,7 +127,10 @@ as `./build/app`. It prints the sum of two integers as a simple smoke test.
 
 ## Tests
 
-GoogleTest is fetched automatically with CMake's `FetchContent` and a small suite is compiled.
+When tests are enabled, CMake first looks for an installed GoogleTest package. If
+one is unavailable, GoogleTest 1.14.0 is downloaded through `FetchContent` using a
+checked SHA-256 archive hash. The test executable links `GTest::gtest_main`, so the
+project does not maintain a duplicate test entry point.
 
 ```bash
 # Build tests

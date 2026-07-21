@@ -102,15 +102,31 @@ endif()
 
 # ---- Tests ----
 if(APP_BUILD_TESTING)
-  include(FetchContent)
-  # Prefer an up-to-date GoogleTest
-  set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
-  set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-  FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-  )
-  FetchContent_MakeAvailable(googletest)
+  find_package(GTest CONFIG QUIET)
+  if(GTest_FOUND)
+    if(NOT TARGET GTest::gtest_main)
+      message(FATAL_ERROR
+        "The installed GTest package does not provide GTest::gtest_main"
+      )
+    endif()
+    message(STATUS "Using installed GoogleTest package")
+  else()
+    include(FetchContent)
+    set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    if(MSVC OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+      # Keep GoogleTest's runtime library compatible with this project on MSVC.
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    endif()
+    message(STATUS "Fetching GoogleTest 1.14.0")
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+      URL_HASH
+        SHA256=1f357c27ca988c3f7c6b4bf68a9395005ac6761f034046e9dde0896e3aba00e4
+    )
+    FetchContent_MakeAvailable(googletest)
+  endif()
 
   # New test translation units are picked up without editing this file.
   file(GLOB_RECURSE TEST_SOURCES
@@ -125,19 +141,7 @@ if(APP_BUILD_TESTING)
     enable_sanitizers_for_target(app_tests)
   endif()
 
-  # Use a project-provided test main when present; otherwise use GoogleTest's.
-  set(HAS_CUSTOM_TEST_MAIN OFF)
-  foreach(_file IN LISTS TEST_SOURCES)
-    if(_file MATCHES "/tests/main\\.cpp$")
-      set(HAS_CUSTOM_TEST_MAIN ON)
-      break()
-    endif()
-  endforeach()
-  if(HAS_CUSTOM_TEST_MAIN)
-    target_link_libraries(app_tests PRIVATE GTest::gtest)
-  else()
-    target_link_libraries(app_tests PRIVATE GTest::gtest_main)
-  endif()
+  target_link_libraries(app_tests PRIVATE GTest::gtest_main)
 
   enable_testing()
   include(GoogleTest)
