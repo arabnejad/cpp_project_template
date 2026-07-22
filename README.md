@@ -12,6 +12,7 @@ src/            # Sources for the app and library
   app.cpp
   main.cpp
 tests/          # Unit tests (GoogleTest)
+  CMakeLists.txt
   test_math_class.cpp
   cmake/
     test_distclean.cmake
@@ -136,9 +137,7 @@ project does not maintain a duplicate test entry point.
 # Build tests
 cmake --build build --target tests
 
-# Run tests
-cmake --build build --target run_tests
-# or directly:
+# Run the complete test suite
 ctest --test-dir build --output-on-failure
 ```
 
