@@ -5,6 +5,10 @@ CMakeDoxygenDefaults.cmake
 **/CMakeDoxygenDefaults.cmake
 # Ignore build artifacts
 build/
+build-development/
+build-release/
+build-sanitizers/
+build-coverage/
 
 # Ignore generated documentation
 docs/
@@ -24,6 +28,7 @@ Testing/
 *.DS_Store
 .vscode/
 .idea/
+CMakeUserPresets.json
 
 # Ignore test output
 *.log

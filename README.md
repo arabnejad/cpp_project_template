@@ -25,8 +25,47 @@ cmake/          # CMake helper modules
   coverage/     # Platform selectors and compiler-specific coverage backends
   distclean.cmake
 CMakeLists.txt  # Root build configuration
+CMakePresets.json # Shared configure, build, and test presets
 Makefile        # Optional GNU Make convenience interface
 ```
+
+## CMake presets
+
+The checked-in `CMakePresets.json` uses preset schema version 3 and establishes
+CMake 3.21 as the project minimum. It deliberately leaves the generator
+unspecified so CMake can select the normal platform default (for example, Unix
+Makefiles, Ninja, Xcode, or Visual Studio).
+
+| Preset | Build directory | Configuration | Purpose |
+| --- | --- | --- | --- |
+| `development` | `build-development` | Debug | Tests and `compile_commands.json` |
+| `release` | `build-release` | Release | Optimized application and tests |
+| `sanitizers` | `build-sanitizers` | Debug | AddressSanitizer and UndefinedBehaviorSanitizer |
+| `coverage` | `build-coverage` | Debug | Platform-appropriate coverage instrumentation |
+
+For development, the complete configure, build, and test workflow is:
+
+```bash
+cmake --preset development
+cmake --build --preset development --parallel
+ctest --preset development
+```
+
+Use `release` or `sanitizers` in all three commands for those workflows. Coverage
+has separate report build presets because each report target runs the tests before
+collecting its data:
+
+```bash
+cmake --preset coverage
+cmake --build --preset coverage-console --parallel
+cmake --build --preset coverage-html --parallel
+ctest --preset coverage
+```
+
+Run `cmake --list-presets`, `cmake --build --list-presets`, or
+`ctest --list-presets` to see the available presets. Machine-specific additions
+belong in the ignored `CMakeUserPresets.json`; shared workflows belong in the
+tracked `CMakePresets.json`.
 
 ## GNU Make convenience interface
 
@@ -35,7 +74,40 @@ CTest as the source of truth. GNU Make is optional; the equivalent direct comman
 remain documented in the sections below for Windows and other environments where
 GNU Make is unavailable.
 
-Running `make` without a target displays the same help as `make help`.
+Running `make` without a target displays the same help as `make help`. The
+`development` preset is selected by default, so these two commands are equivalent:
+
+```bash
+make build
+make build PRESET=development
+```
+
+The selected preset is used consistently for configuration, building, and testing.
+Choose another shared preset with `PRESET`:
+
+```bash
+# Optimized release build and tests
+make build PRESET=release
+make test PRESET=release
+
+# Instrumented build and tests
+make test PRESET=sanitizers
+
+# Coverage-instrumented build and tests, without generating reports
+make test PRESET=coverage
+```
+
+`PRESET` also selects the build tree used by `configure`, `run`, `format`,
+`format-check`, `cppcheck`, and `clean`; for example, run the optimized application
+with `make run PRESET=release`.
+
+The dedicated commands perform the complete sanitizer or coverage workflow. In
+particular, `make coverage` also creates the console and HTML reports:
+
+```bash
+make sanitizers
+make coverage
+```
 
 | Target | Action |
 | --- | --- |
@@ -48,21 +120,23 @@ Running `make` without a target displays the same help as `make help`.
 | `cppcheck` | Run static analysis on first-party C++ files |
 | `sanitizers` | Build and test with AddressSanitizer and UndefinedBehaviorSanitizer |
 | `coverage` | Run tests and generate console and HTML coverage reports |
-| `clean` | Remove compiled files from the normal build tree |
-| `distclean` | Remove the selected generated build trees using the guarded script |
+| `clean` | Remove compiled files from the selected preset's build tree |
+| `distclean` | Remove all shared-preset build trees using the guarded script |
 
-The normal, sanitizer, and coverage workflows use `build`, `build-sanitizers`, and
-`build-coverage` respectively. Common settings can be overridden on the command
-line:
+The development, release, sanitizer, and coverage workflows use
+`build-development`, `build-release`, `build-sanitizers`, and `build-coverage`
+respectively. Make delegates configuration, builds, and tests to the matching
+CMake presets. Tool paths, parallelism, and extra configure arguments can still be
+overridden on the command line:
 
 ```bash
-make build BUILD_DIR=build-clang BUILD_TYPE=Release JOBS=8 \
+make build PRESET=release JOBS=8 \
   CMAKE=cmake CMAKE_ARGS="-DCMAKE_CXX_COMPILER=clang++"
 ```
 
-Supported variables are `CMAKE`, `CTEST`, `BUILD_DIR`, `BUILD_TYPE`, `JOBS`, and
-`CMAKE_ARGS`. `COVERAGE_BUILD_DIR` and `SANITIZER_BUILD_DIR` can also override the
-two specialized build-tree names.
+Supported variables are `CMAKE`, `CTEST`, `PRESET`, `JOBS`, and `CMAKE_ARGS`.
+`PRESET` must name a checked-in configure, build, and test preset when used with
+the generic `build` or `test` targets.
 
 ## Build with CMake directly
 
@@ -113,9 +187,8 @@ values named `BUILD_TESTING`, `ENABLE_COVERAGE`, `ENABLE_SANITIZERS`, or
 `WARNINGS_AS_ERRORS` are left unchanged and do not enable this project's developer
 features.
 
-The minimum supported CMake version remains 3.16. Because that version predates
-`PROJECT_IS_TOP_LEVEL`, the project uses an equivalent comparison between its
-project source directory and CMake's top-level source directory.
+The minimum supported CMake version is 3.21. The built-in
+`PROJECT_IS_TOP_LEVEL` variable guards all standalone-only features.
 
 ## Run
 
@@ -268,7 +341,7 @@ the project root. Only explicit, top-level directories named `build`, `build-*`,
 
 ```bash
 cmake -DPROJECT_ROOT=. \
-  "-DBUILD_DIRS=build;build-coverage;build-sanitizers" \
+  "-DBUILD_DIRS=build-development;build-release;build-sanitizers;build-coverage" \
   -P cmake/distclean.cmake
 ```
 

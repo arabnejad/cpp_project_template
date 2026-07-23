@@ -1,11 +1,9 @@
 CMAKE ?= cmake
 CTEST ?= ctest
-BUILD_DIR ?= build
-BUILD_TYPE ?= Debug
+PRESET ?= development
 JOBS ?= 2
 CMAKE_ARGS ?=
-COVERAGE_BUILD_DIR ?= build-coverage
-SANITIZER_BUILD_DIR ?= build-sanitizers
+DISTCLEAN_DIRS := build-development;build-release;build-sanitizers;build-coverage
 
 MAKEFLAGS += --no-print-directory
 
@@ -15,80 +13,56 @@ MAKEFLAGS += --no-print-directory
 
 help:
 	@$(CMAKE) -E echo "C++ project template commands:"
-	@$(CMAKE) -E echo "  make configure     Configure the normal build"
-	@$(CMAKE) -E echo "  make build         Build the application and tests"
-	@$(CMAKE) -E echo "  make run           Build and run the application"
-	@$(CMAKE) -E echo "  make test          Build tests and run them with CTest"
+	@$(CMAKE) -E echo "  make configure     Configure PRESET (default: development)"
+	@$(CMAKE) -E echo "  make build         Build PRESET"
+	@$(CMAKE) -E echo "  make run           Build and run the application for PRESET"
+	@$(CMAKE) -E echo "  make test          Build and test PRESET with CTest"
 	@$(CMAKE) -E echo "  make format        Apply clang-format to C++ files"
 	@$(CMAKE) -E echo "  make format-check  Check formatting without changing files"
 	@$(CMAKE) -E echo "  make cppcheck      Run cppcheck on first-party files"
 	@$(CMAKE) -E echo "  make sanitizers    Build and test with ASan and UBSan"
 	@$(CMAKE) -E echo "  make coverage      Run tests and create console and HTML coverage reports"
-	@$(CMAKE) -E echo "  make clean         Clean compiled files in BUILD_DIR"
-	@$(CMAKE) -E echo "  make distclean     Remove the selected generated build directories"
+	@$(CMAKE) -E echo "  make clean         Clean compiled files for PRESET"
+	@$(CMAKE) -E echo "  make distclean     Remove all shared-preset build directories"
 	@$(CMAKE) -E echo ""
-	@$(CMAKE) -E echo "Overrides: CMAKE, CTEST, BUILD_DIR, BUILD_TYPE, JOBS, CMAKE_ARGS,"
-	@$(CMAKE) -E echo "           COVERAGE_BUILD_DIR, SANITIZER_BUILD_DIR"
+	@$(CMAKE) -E echo "Preset selection: make build PRESET=release"
+	@$(CMAKE) -E echo "Available presets: development, release, sanitizers, coverage"
+	@$(CMAKE) -E echo "Overrides: CMAKE, CTEST, PRESET, JOBS, CMAKE_ARGS"
 
 configure:
-	$(CMAKE) -S . -B "$(BUILD_DIR)" \
-		-DCMAKE_BUILD_TYPE="$(BUILD_TYPE)" \
-		-DBUILD_TESTING=ON \
-		$(CMAKE_ARGS)
+	$(CMAKE) --preset "$(PRESET)" $(CMAKE_ARGS)
 
 build: configure
-	$(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" --parallel "$(JOBS)"
+	$(CMAKE) --build --preset "$(PRESET)" --parallel "$(JOBS)"
 
 run: configure
-	$(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" \
+	$(CMAKE) --build --preset "$(PRESET)" \
 		--target run --parallel "$(JOBS)"
 
-test: configure
-	$(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" \
-		--target app_tests --parallel "$(JOBS)"
-	$(CTEST) --test-dir "$(BUILD_DIR)" --build-config "$(BUILD_TYPE)" \
-		--output-on-failure
+test: build
+	$(CTEST) --preset "$(PRESET)"
 
 format: configure
-	$(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" \
-		--target clang_format
+	$(CMAKE) --build --preset "$(PRESET)" --target clang_format
 
 format-check: configure
-	$(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" \
-		--target clang_format_check
+	$(CMAKE) --build --preset "$(PRESET)" --target clang_format_check
 
 cppcheck: configure
-	$(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" \
-		--target cppcheck
+	$(CMAKE) --build --preset "$(PRESET)" --target cppcheck
 
 sanitizers:
-	$(CMAKE) -S . -B "$(SANITIZER_BUILD_DIR)" \
-		-DCMAKE_BUILD_TYPE=Debug \
-		-DBUILD_TESTING=ON \
-		-DENABLE_COVERAGE=OFF \
-		-DENABLE_SANITIZERS=ON \
-		$(CMAKE_ARGS)
-	$(CMAKE) --build "$(SANITIZER_BUILD_DIR)" --config Debug \
-		--parallel "$(JOBS)"
-	$(CTEST) --test-dir "$(SANITIZER_BUILD_DIR)" --build-config Debug \
-		--output-on-failure
+	$(MAKE) test PRESET=sanitizers
 
 coverage:
-	$(CMAKE) -S . -B "$(COVERAGE_BUILD_DIR)" \
-		-DCMAKE_BUILD_TYPE=Debug \
-		-DBUILD_TESTING=ON \
-		-DENABLE_SANITIZERS=OFF \
-		-DENABLE_COVERAGE=ON \
-		$(CMAKE_ARGS)
-	$(CMAKE) --build "$(COVERAGE_BUILD_DIR)" --config Debug \
-		--target gcovr_console --parallel "$(JOBS)"
-	$(CMAKE) --build "$(COVERAGE_BUILD_DIR)" --config Debug \
-		--target gcovr_html --parallel "$(JOBS)"
+	$(CMAKE) --preset coverage $(CMAKE_ARGS)
+	$(CMAKE) --build --preset coverage-console --parallel "$(JOBS)"
+	$(CMAKE) --build --preset coverage-html --parallel "$(JOBS)"
 
 clean:
-	$(CMAKE) --build "$(BUILD_DIR)" --config "$(BUILD_TYPE)" --target clean
+	$(CMAKE) --build --preset "$(PRESET)" --target clean
 
 distclean:
 	$(CMAKE) -DPROJECT_ROOT="$(CURDIR)" \
-		"-DBUILD_DIRS=$(BUILD_DIR);$(SANITIZER_BUILD_DIR);$(COVERAGE_BUILD_DIR)" \
+		"-DBUILD_DIRS=$(DISTCLEAN_DIRS)" \
 		-P cmake/distclean.cmake

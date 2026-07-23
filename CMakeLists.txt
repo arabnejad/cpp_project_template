@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 
 # Policies
 if(POLICY CMP0135)
@@ -7,20 +7,13 @@ endif()
 
 project(app VERSION 0.1.0 LANGUAGES CXX)
 
-# CMake 3.16 predates PROJECT_IS_TOP_LEVEL, so use the equivalent source-tree
-# comparison. Developer tooling and application targets are standalone-only.
-set(APP_PROJECT_IS_TOP_LEVEL OFF)
-if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(APP_PROJECT_IS_TOP_LEVEL ON)
-endif()
-
 # Disallow in-source builds of this project without rejecting a parent project's
 # valid out-of-source build.
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(FATAL_ERROR "In-source builds are not supported. Use: cmake -S . -B build")
 endif()
 
-if(APP_PROJECT_IS_TOP_LEVEL)
+if(PROJECT_IS_TOP_LEVEL)
   option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)
   option(ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
   option(WARNINGS_AS_ERRORS "Treat first-party compiler warnings as errors" OFF)
@@ -78,7 +71,7 @@ if(ENABLE_SANITIZERS)
   enable_sanitizers_for_target(app_lib)
 endif()
 
-if(APP_PROJECT_IS_TOP_LEVEL)
+if(PROJECT_IS_TOP_LEVEL)
   add_executable(app "${PROJECT_SOURCE_DIR}/src/main.cpp")
   target_link_libraries(app PRIVATE app_lib)
   apply_project_compiler_settings(app PRIVATE)
@@ -99,7 +92,7 @@ if(APP_PROJECT_IS_TOP_LEVEL)
 endif()
 
 # ---- Tests ----
-if(APP_PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
+if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
   add_subdirectory(tests)
 
   # Coverage is deliberately limited to first-party targets.
