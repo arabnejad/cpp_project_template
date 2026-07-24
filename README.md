@@ -230,11 +230,26 @@ cmake --build build --target clang_format_check
 
 ## Static analysis
 
-Run cppcheck on first-party sources and headers:
+Run cppcheck on first-party sources and headers with the default development
+preset:
 
 ```bash
-cmake --build build --target cppcheck
+make cppcheck
+
+# Equivalent direct CMake commands
+cmake --preset development
+cmake --build --preset development --target cppcheck
 ```
+
+The target analyzes C++17 headers and sources below `include/`, `src/`, and
+`tests/`, enabling warning, style, performance, and portability diagnostics.
+Generated build files and third-party dependencies are outside these roots and are
+not analyzed. Actionable diagnostics return a non-zero status.
+
+Inline suppressions are allowed only for confirmed false positives and must state
+their reason next to the affected code. The current suppression covers a
+GoogleTest fixture member that cppcheck cannot see being used through `TEST_F`'s
+generated subclass.
 
 The formatting and static-analysis targets fail with a clear message when their
 respective optional tool is unavailable. Neither tool is required for a normal

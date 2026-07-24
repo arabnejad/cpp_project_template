@@ -1,13 +1,22 @@
-# Static analysis for first-party C++ sources and headers.
+# Static analysis for first-party C++ sources and headers. Restricting the glob to
+# these source-controlled directories keeps generated files and dependencies out
+# of the analysis without relying on fragile exclusion patterns.
 find_program(CPPCHECK_EXE NAMES cppcheck)
+
+set(CPPCHECK_SOURCE_PATTERNS)
+foreach(CPPCHECK_DIRECTORY IN ITEMS include src tests)
+  foreach(CPPCHECK_EXTENSION IN ITEMS cc cpp cxx h hh hpp hxx ipp tpp)
+    list(APPEND CPPCHECK_SOURCE_PATTERNS
+      "${PROJECT_SOURCE_DIR}/${CPPCHECK_DIRECTORY}/*.${CPPCHECK_EXTENSION}"
+    )
+  endforeach()
+endforeach()
 
 file(GLOB_RECURSE CPPCHECK_SOURCE_FILES
   CONFIGURE_DEPENDS
-  "${PROJECT_SOURCE_DIR}/include/*.h"
-  "${PROJECT_SOURCE_DIR}/include/*.hpp"
-  "${PROJECT_SOURCE_DIR}/src/*.cpp"
-  "${PROJECT_SOURCE_DIR}/tests/*.cpp"
+  ${CPPCHECK_SOURCE_PATTERNS}
 )
+list(SORT CPPCHECK_SOURCE_FILES)
 
 if(NOT CPPCHECK_EXE)
   add_custom_target(cppcheck
@@ -19,12 +28,12 @@ if(NOT CPPCHECK_EXE)
 elseif(CPPCHECK_SOURCE_FILES)
   add_custom_target(cppcheck
     COMMAND ${CPPCHECK_EXE}
-      --enable=warning,performance,portability
+      --enable=warning,style,performance,portability
       --error-exitcode=1
       --inline-suppr
       --language=c++
-      --std=c++14
-      --suppress=missingIncludeSystem
+      --std=c++17
+      --template=gcc
       -I "${PROJECT_SOURCE_DIR}/include"
       ${CPPCHECK_SOURCE_FILES}
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
@@ -34,7 +43,9 @@ elseif(CPPCHECK_SOURCE_FILES)
   )
 else()
   add_custom_target(cppcheck
-    COMMAND ${CMAKE_COMMAND} -E echo "cppcheck: no files matched; nothing to check."
-    COMMENT "cppcheck (no-op)"
+    COMMAND ${CMAKE_COMMAND} -E echo
+      "cppcheck found no first-party C++ files under include, src, or tests."
+    COMMAND ${CMAKE_COMMAND} -E false
+    COMMENT "cppcheck has no input files"
   )
 endif()

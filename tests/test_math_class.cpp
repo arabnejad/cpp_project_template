@@ -3,6 +3,8 @@
 
 class MathClassTest : public ::testing::Test {
 protected:
+  // TEST_F uses this member through a GoogleTest-generated subclass.
+  // cppcheck-suppress unusedStructMember
   MATH m;
 };
 
