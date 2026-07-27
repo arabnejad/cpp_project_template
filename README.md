@@ -216,17 +216,28 @@ ctest --test-dir build --output-on-failure
 
 ## Formatting
 
-Format all sources with clang-format (if available on your PATH):
+Apply the project's `.clang-format` rules to all first-party C and C++ files. This
+command modifies files in place and is intended for local development:
 
 ```bash
-cmake --build build --target clang_format
+make format
 ```
 
-Check formatting without modifying files:
+Check the same files without modifying them:
 
 ```bash
-cmake --build build --target clang_format_check
+make format-check
+
+# Equivalent direct CMake commands
+cmake --preset development
+cmake --build --preset development --target clang_format_check
 ```
+
+Both targets use the same extension list and cover matching files in the project
+root and below `include/`, `src/`, and `tests/`. Generated build trees and fetched
+dependencies are outside that scope. `format-check` runs clang-format with
+`--dry-run --Werror`, so formatting differences produce a non-zero status without
+changing the source tree.
 
 ## Static analysis
 
