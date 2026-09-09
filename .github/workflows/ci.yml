@@ -64,8 +64,11 @@ jobs:
       - name: Build
         run: cmake --build --preset release --parallel
 
-      - name: Test
-        run: ctest --preset release
+      - name: Test application
+        run: ctest --preset release --label-exclude '^package$'
+
+      - name: Test installed package
+        run: ctest --preset release --label-regex '^package$'
 
   sanitizers:
     name: Sanitizers

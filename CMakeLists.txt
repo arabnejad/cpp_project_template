@@ -41,6 +41,8 @@ if(ENABLE_COVERAGE AND ENABLE_SANITIZERS)
 endif()
 
 # Modules
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_options.cmake")
 
 if(ENABLE_COVERAGE)
@@ -65,11 +67,50 @@ file(GLOB_RECURSE APP_SOURCES
 list(FILTER APP_SOURCES EXCLUDE REGEX "/main\\.cpp$")
 add_library(app_lib ${APP_SOURCES})
 add_library(app::app_lib ALIAS app_lib)
-target_include_directories(app_lib PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(app_lib PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 apply_project_compiler_settings(app_lib PUBLIC)
 if(ENABLE_SANITIZERS)
   enable_sanitizers_for_target(app_lib)
 endif()
+
+# ---- Installation ----
+set(APP_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+install(TARGETS app_lib
+  EXPORT appTargets
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+
+configure_package_config_file(
+  "${PROJECT_SOURCE_DIR}/cmake/appConfig.cmake.in"
+  "${PROJECT_BINARY_DIR}/appConfig.cmake"
+  INSTALL_DESTINATION "${APP_INSTALL_CMAKEDIR}"
+)
+write_basic_package_version_file(
+  "${PROJECT_BINARY_DIR}/appConfigVersion.cmake"
+  VERSION "${PROJECT_VERSION}"
+  COMPATIBILITY SameMajorVersion
+)
+
+install(EXPORT appTargets
+  FILE appTargets.cmake
+  NAMESPACE app::
+  DESTINATION "${APP_INSTALL_CMAKEDIR}"
+)
+install(FILES
+  "${PROJECT_BINARY_DIR}/appConfig.cmake"
+  "${PROJECT_BINARY_DIR}/appConfigVersion.cmake"
+  DESTINATION "${APP_INSTALL_CMAKEDIR}"
+)
 
 if(PROJECT_IS_TOP_LEVEL)
   add_executable(app "${PROJECT_SOURCE_DIR}/src/main.cpp")

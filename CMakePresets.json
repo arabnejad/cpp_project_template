@@ -119,6 +119,11 @@
       "name": "sanitizers",
       "configurePreset": "sanitizers",
       "configuration": "Debug",
+      "filter": {
+        "exclude": {
+          "label": "^package$"
+        }
+      },
       "output": {
         "outputOnFailure": true
       }
@@ -127,6 +132,11 @@
       "name": "coverage",
       "configurePreset": "coverage",
       "configuration": "Debug",
+      "filter": {
+        "exclude": {
+          "label": "^package$"
+        }
+      },
       "output": {
         "outputOnFailure": true
       }

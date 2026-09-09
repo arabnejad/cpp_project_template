@@ -16,12 +16,17 @@ tests/          # Unit tests (GoogleTest)
   calculator_test.cpp
   cmake/
     test_distclean.cmake
+    test_install_package.cmake
+  package_consumer/ # Standalone find_package() integration fixture
+    CMakeLists.txt
+    main.cpp
 cmake/          # CMake helper modules
   compiler_options.cmake
   clang_format.cmake
   cppcheck.cmake
   sanitizers.cmake
   code_coverage.cmake
+  appConfig.cmake.in # Installed-package configuration template
   coverage/     # Platform selectors and compiler-specific coverage backends
   distclean.cmake
 CMakeLists.txt  # Root build configuration
@@ -76,7 +81,7 @@ documented local workflows:
 | Job | Configuration |
 | --- | --- |
 | Debug | `development` preset with both GCC and Clang |
-| Release | `release` preset with GCC |
+| Release | `release` preset with GCC, including an explicit installed-package test |
 | Sanitizers | `sanitizers` preset with GCC |
 | Formatting and static analysis | `clang_format_check` and `cppcheck` targets |
 | Coverage | `coverage-console` and `coverage-html` build presets |
@@ -88,6 +93,11 @@ release commit hashes and checkout credentials are not persisted.
 
 The coverage job uploads `build-coverage/coverage/` as the `coverage-html`
 artifact after the tests and both report generators succeed.
+
+The `install_package_consumer` test is labelled `package` and runs as an explicit
+Release job step. Sanitizer and coverage presets exclude that label because an
+installed instrumented static library requires instrumentation runtime settings
+that are intentionally private to this project's build targets.
 
 GitHub Actions references:
 
@@ -136,6 +146,7 @@ particular, `make coverage` also creates the console and HTML reports:
 ```bash
 make sanitizers
 make coverage
+make install PRESET=release INSTALL_PREFIX=/path/to/install-prefix
 ```
 
 | Target | Action |
@@ -149,6 +160,7 @@ make coverage
 | `cppcheck` | Run static analysis on first-party C++ files |
 | `sanitizers` | Build and test with AddressSanitizer and UndefinedBehaviorSanitizer |
 | `coverage` | Run tests and generate console and HTML coverage reports |
+| `install` | Build and install the reusable library package |
 | `clean` | Remove compiled files from the selected preset's build tree |
 | `distclean` | Remove all shared-preset build trees using the guarded script |
 
@@ -163,7 +175,9 @@ make build PRESET=release JOBS=8 \
   CMAKE=cmake CMAKE_ARGS="-DCMAKE_CXX_COMPILER=clang++"
 ```
 
-Supported variables are `CMAKE`, `CTEST`, `PRESET`, `JOBS`, and `CMAKE_ARGS`.
+Supported variables are `CMAKE`, `CTEST`, `PRESET`, `JOBS`, `CMAKE_ARGS`,
+`INSTALL_PREFIX`, and `INSTALL_CONFIG`. The install configuration defaults to
+`Release` for the release preset and `Debug` for the other shared presets.
 `PRESET` must name a checked-in configure, build, and test preset when used with
 the generic `build` or `test` targets.
 
@@ -219,6 +233,37 @@ features.
 
 The minimum supported CMake version is 3.21. The built-in
 `PROJECT_IS_TOP_LEVEL` variable guards all standalone-only features.
+
+## Install and consume the library package
+
+The template demonstrates a reusable library package. Install a Release build to
+a selected prefix with direct CMake commands:
+
+```bash
+cmake --preset release -DBUILD_TESTING=OFF
+cmake --build --preset release --parallel
+cmake --install build-release --config Release --prefix /path/to/install-prefix
+```
+
+GNU Make users can run the equivalent convenience command:
+
+```bash
+make install PRESET=release INSTALL_PREFIX=/path/to/install-prefix
+```
+
+When `INSTALL_PREFIX` or `--prefix` is omitted, CMake uses the configured
+`CMAKE_INSTALL_PREFIX`. The installation contains the `app_lib` library, public
+headers, and relocatable package files. A separate CMake project can consume it
+without referring to this source tree:
+
+```cmake
+find_package(app CONFIG REQUIRED)
+target_link_libraries(your_target PRIVATE app::app_lib)
+```
+
+Set `CMAKE_PREFIX_PATH` to the chosen installation prefix if it is outside
+CMake's normal search locations. The `install_package_consumer` CTest installs to
+an isolated fixture and verifies this complete workflow automatically.
 
 ## Run
 

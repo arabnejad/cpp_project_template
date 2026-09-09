@@ -51,6 +51,7 @@ function(coverage_get_ctest_args output_variable)
   set(_ctest_args
     --test-dir "${PROJECT_BINARY_DIR}"
     --output-on-failure
+    --label-exclude "^package$"
   )
   if(CMAKE_CONFIGURATION_TYPES)
     list(APPEND _ctest_args -C Debug)

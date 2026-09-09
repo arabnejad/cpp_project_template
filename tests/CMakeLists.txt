@@ -29,6 +29,8 @@ file(GLOB_RECURSE TEST_SOURCES
   CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
+# The package consumer is compiled as a separate project by its CMake script test.
+list(FILTER TEST_SOURCES EXCLUDE REGEX "/package_consumer/")
 
 add_executable(app_tests ${TEST_SOURCES})
 target_link_libraries(app_tests PRIVATE app::app_lib GTest::gtest_main)
@@ -49,6 +51,22 @@ add_test(NAME application_smoke
 set_tests_properties(application_smoke PROPERTIES
   WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
   PASS_REGULAR_EXPRESSION "Sum of 2 and 3 is 5"
+)
+
+add_test(NAME install_package_consumer
+  COMMAND ${CMAKE_COMMAND}
+    -DPACKAGE_BUILD_DIR=${PROJECT_BINARY_DIR}
+    -DCONSUMER_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/package_consumer
+    -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/install-package-fixture
+    -DBUILD_CONFIG=$<CONFIG>
+    "-DGENERATOR=${CMAKE_GENERATOR}"
+    "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+    "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+    -DCTEST_COMMAND=${CMAKE_CTEST_COMMAND}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_install_package.cmake
+)
+set_tests_properties(install_package_consumer PROPERTIES
+  LABELS package
 )
 
 add_test(NAME distclean_safety
