@@ -1,7 +1,68 @@
 # Modern C++ Project Template (CMake)
 
-This is a minimal cross-platform C++ project template using CMake. It follows modern C++ practices,
-sets sensible compiler warnings, provides formatting and test targets, and includes basic coverage helpers.
+[![CI](https://github.com/arabnejad/cpp_project_template/actions/workflows/ci.yml/badge.svg?branch=master&event=push)](https://github.com/arabnejad/cpp_project_template/actions/workflows/ci.yml)
+[![Coverage job](https://img.shields.io/github/check-runs/arabnejad/cpp_project_template/master?nameFilter=Coverage&label=coverage)](https://github.com/arabnejad/cpp_project_template/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+
+This is a minimal cross-platform C++ project template using CMake. It follows
+modern target-based practices, sets useful compiler warnings, and provides tests,
+formatting, static analysis, sanitizers, coverage, installation, and packaging.
+
+## Requirements
+
+A normal application or library build requires:
+
+- CMake 3.21 or newer.
+- A C++17-capable compiler.
+- A build tool supported by the selected CMake generator, such as Ninja, GNU
+  Make, Xcode, or Visual Studio.
+
+Tests are enabled by default in a standalone build. CMake first looks for an
+installed GoogleTest package and otherwise downloads the pinned GoogleTest 1.14.0
+archive. Therefore, a fresh test build requires either an installed package or
+network access. Use `-DBUILD_TESTING=OFF` for a dependency-free library and
+application build.
+
+The following tools are required only for their corresponding workflows:
+
+| Workflow | Additional requirement |
+| --- | --- |
+| Make convenience commands | GNU Make |
+| Formatting | `clang-format` |
+| Static analysis | `cppcheck` |
+| GCC coverage | Matching `gcov` and `gcovr` |
+| Clang coverage | Matching `llvm-profdata` and `llvm-cov` |
+| MSVC or ClangCL coverage | Microsoft Code Coverage Console and ReportGenerator |
+| Sanitizers | GCC, Clang, or AppleClang with ASan and UBSan support |
+
+Missing optional analysis, formatting, sanitizer, or coverage tools do not affect
+a normal build when their workflows are not requested.
+
+## Supported platforms and compilers
+
+The core project and package use portable C++17 and target-based CMake logic:
+
+| Platform | Compiler support | Validation status |
+| --- | --- | --- |
+| Linux | GCC and Clang | CI-tested on Ubuntu 24.04 with GCC 13 and Clang 18 |
+| macOS | AppleClang, Clang, and GCC | Supported by CMake; not currently CI-tested |
+| Windows | MSVC, ClangCL, and MinGW GCC | Supported by CMake; not currently CI-tested |
+
+Other C++17-capable compiler versions may work but are not part of the documented
+validation baseline. Compiler extensions are disabled for first-party targets.
+
+## Project options
+
+| CMake option | Default | Purpose |
+| --- | --- | --- |
+| `BUILD_TESTING` | `ON` for standalone builds | Build and register the CTest suite |
+| `WARNINGS_AS_ERRORS` | `OFF` | Promote first-party compiler warnings to errors |
+| `ENABLE_SANITIZERS` | `OFF` | Enable AddressSanitizer and UndefinedBehaviorSanitizer |
+| `ENABLE_COVERAGE` | `OFF` | Enable the platform-specific coverage backend |
+
+Developer-only options are disabled when the project is consumed through
+`add_subdirectory()`. Coverage and sanitizers are intentionally mutually
+exclusive and must use separate build directories.
 
 ## Project layout
 
@@ -32,9 +93,15 @@ cmake/          # CMake helper modules
 CMakeLists.txt  # Root build configuration
 CMakePresets.json # Shared configure, build, and test presets
 Makefile        # Optional GNU Make convenience interface
+LICENSE         # MIT license
 ```
 
 ## CMake presets
+
+Checked-in presets are the recommended cross-platform developer interface. The
+Makefile is a thin optional wrapper around the same presets, while direct CMake
+commands remain available for custom build directories and integrations. CMake
+and CTest remain the source of truth in every case.
 
 The checked-in `CMakePresets.json` uses preset schema version 3 and establishes
 CMake 3.21 as the project minimum. It deliberately leaves the generator
@@ -86,6 +153,9 @@ documented local workflows:
 | Formatting and static analysis | `clang_format_check` and `cppcheck` targets |
 | Coverage | `coverage-console` and `coverage-html` build presets |
 
+The current workflow runs on Ubuntu 24.04. The macOS and Windows CMake paths are
+documented and implemented but are not yet exercised by GitHub Actions.
+
 All compiled CI configurations enable `WARNINGS_AS_ERRORS`. Each job receives
 only read access to repository contents, and a newer run cancels an older run for
 the same workflow and Git reference. Third-party actions are pinned to immutable
@@ -93,6 +163,8 @@ release commit hashes and checkout credentials are not persisted.
 
 The coverage job uploads `build-coverage/coverage/` as the `coverage-html`
 artifact after the tests and both report generators succeed.
+The coverage badge reports the pass/fail state of that coverage check; detailed
+line, function, and branch results remain in the job output and HTML artifact.
 
 The `install_package_consumer` test is labelled `package` and runs as an explicit
 Release job step. Sanitizer and coverage presets exclude that label because an
@@ -105,6 +177,8 @@ GitHub Actions references:
 - [Workflow artifacts](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflow-artifacts)
 - [Checkout action](https://github.com/actions/checkout)
 - [Upload Artifact action](https://github.com/actions/upload-artifact)
+- [Ubuntu 24.04 runner software](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)
+- [Shields.io GitHub check-run badges](https://shields.io/badges/git-hub-branch-check-runs)
 
 ## GNU Make convenience interface
 
@@ -352,7 +426,8 @@ cmake -S . -B build-sanitizers \
   -DENABLE_SANITIZERS=ON \
   -DCMAKE_BUILD_TYPE=Debug
 cmake --build build-sanitizers --config Debug --parallel
-ctest --test-dir build-sanitizers -C Debug --output-on-failure
+ctest --test-dir build-sanitizers -C Debug --output-on-failure \
+  --label-exclude '^package$'
 ```
 
 Sanitizers and coverage cannot be enabled in the same build tree. The Microsoft
@@ -410,8 +485,9 @@ cmake --build build-coverage --target gcovr_html
 ```
 
 Both report targets build the unit-test and sample-application executables before
-running the complete CTest suite. This includes the `application_smoke` test and
-prevents report generation from depending on artifacts built by an earlier job.
+running the complete coverage-compatible CTest suite. This includes the
+`application_smoke` test and excludes the separately validated `package` test,
+preventing report generation from depending on artifacts built by an earlier job.
 
 The historical target names are retained on every platform even when the active
 backend is LLVM or Microsoft Code Coverage. Multi-configuration generators such as
@@ -473,3 +549,8 @@ future refactor from reintroducing an unrestricted recursive deletion.
 - Compiler options and the C++ standard are centralized in `cmake/compiler_options.cmake`.
 - clang-format settings are in `.clang-format`, and the formatting target is defined in `cmake/clang_format.cmake`.
 - Coverage helpers live in `cmake/code_coverage.cmake`.
+
+## License
+
+This project is available under the [MIT License](LICENSE). Copyright
+2025–2026 Hamid Arabnejad.
