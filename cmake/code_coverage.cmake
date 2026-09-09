@@ -6,7 +6,10 @@
 #     include(cmake/code_coverage.cmake)
 #     enable_coverage_for_target(<production-target>)
 #     enable_coverage_for_target(<test-target>)
-#     add_coverage_targets(TEST_TARGET <test-target>)
+#     add_coverage_targets(
+#       TEST_TARGET <coverage-report executable>
+#       TEST_DEPENDENCIES <other executables required by CTest>...
+#     )
 #   endif()
 
 if(CMAKE_CONFIGURATION_TYPES)
@@ -31,6 +34,17 @@ function(coverage_validate_test_target target_name)
       "add_coverage_targets received unknown target: ${target_name}"
     )
   endif()
+endfunction()
+
+function(coverage_validate_test_dependencies)
+  foreach(target_name IN LISTS ARGN)
+    if(NOT TARGET ${target_name})
+      message(FATAL_ERROR
+        "add_coverage_targets received unknown TEST_DEPENDENCY target: "
+        "${target_name}"
+      )
+    endif()
+  endforeach()
 endfunction()
 
 function(coverage_get_ctest_args output_variable)

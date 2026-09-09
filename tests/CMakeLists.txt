@@ -58,5 +58,5 @@ add_test(NAME distclean_safety
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_distclean.cmake
 )
 
-# Convenience target to build the test executable without running it.
-add_custom_target(tests DEPENDS app_tests)
+# Build every executable required by the complete CTest suite.
+add_custom_target(tests DEPENDS app_tests app)

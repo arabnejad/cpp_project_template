@@ -50,11 +50,13 @@ endfunction()
 function(add_coverage_targets)
   set(options)
   set(oneValueArgs TEST_TARGET)
-  set(multiValueArgs)
+  set(multiValueArgs TEST_DEPENDENCIES)
   cmake_parse_arguments(COV "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   coverage_validate_test_target("${COV_TEST_TARGET}")
+  coverage_validate_test_dependencies(${COV_TEST_DEPENDENCIES})
   coverage_get_ctest_args(COVERAGE_CTEST_ARGS)
+  set(COVERAGE_BUILD_TARGETS ${COV_TEST_TARGET} ${COV_TEST_DEPENDENCIES})
 
   set(COVERAGE_DIR "${PROJECT_BINARY_DIR}/coverage")
   set(MS_COVERAGE_FILE "${COVERAGE_DIR}/coverage.cobertura.xml")
@@ -81,7 +83,7 @@ function(add_coverage_targets)
       "-filefilters:${MS_FILE_FILTERS}"
     COMMAND powershell -NoProfile -NonInteractive -Command
       "Get-Content -LiteralPath '${COVERAGE_DIR}/Summary.txt'"
-    DEPENDS ${COV_TEST_TARGET}
+    DEPENDS ${COVERAGE_BUILD_TARGETS}
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
@@ -98,7 +100,7 @@ function(add_coverage_targets)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${COVERAGE_DIR}/index.htm"
       "${COVERAGE_DIR}/index.html"
-    DEPENDS ${COV_TEST_TARGET}
+    DEPENDS ${COVERAGE_BUILD_TARGETS}
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM

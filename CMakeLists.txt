@@ -98,8 +98,12 @@ if(PROJECT_IS_TOP_LEVEL AND BUILD_TESTING)
   # Coverage is deliberately limited to first-party targets.
   if(ENABLE_COVERAGE)
     enable_coverage_for_target(app_lib)
+    enable_coverage_for_target(app)
     enable_coverage_for_target(app_tests)
-    add_coverage_targets(TEST_TARGET app_tests)
+    add_coverage_targets(
+      TEST_TARGET app_tests
+      TEST_DEPENDENCIES app
+    )
   endif()
 
 endif()

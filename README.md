@@ -364,6 +364,10 @@ cmake --build build-coverage --target gcovr_console
 cmake --build build-coverage --target gcovr_html
 ```
 
+Both report targets build the unit-test and sample-application executables before
+running the complete CTest suite. This includes the `application_smoke` test and
+prevents report generation from depending on artifacts built by an earlier job.
+
 The historical target names are retained on every platform even when the active
 backend is LLVM or Microsoft Code Coverage. Multi-configuration generators such as
 Visual Studio and Xcode must select Debug explicitly:

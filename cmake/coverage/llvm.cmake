@@ -64,11 +64,13 @@ endfunction()
 function(add_coverage_targets)
   set(options)
   set(oneValueArgs TEST_TARGET)
-  set(multiValueArgs)
+  set(multiValueArgs TEST_DEPENDENCIES)
   cmake_parse_arguments(COV "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   coverage_validate_test_target("${COV_TEST_TARGET}")
+  coverage_validate_test_dependencies(${COV_TEST_DEPENDENCIES})
   coverage_get_ctest_args(COVERAGE_CTEST_ARGS)
+  set(COVERAGE_BUILD_TARGETS ${COV_TEST_TARGET} ${COV_TEST_DEPENDENCIES})
 
   set(COVERAGE_DIR "${PROJECT_BINARY_DIR}/coverage")
   set(LLVM_RAW_PROFILE_DIR "${COVERAGE_DIR}/raw")
@@ -95,7 +97,7 @@ function(add_coverage_targets)
       "-ignore-filename-regex=${LLVM_IGNORE_REGEX}"
       "${PROJECT_SOURCE_DIR}/src"
       "${PROJECT_SOURCE_DIR}/include"
-    DEPENDS ${COV_TEST_TARGET}
+    DEPENDS ${COVERAGE_BUILD_TARGETS}
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
@@ -112,7 +114,7 @@ function(add_coverage_targets)
       "-output-dir=${COVERAGE_DIR}"
       "${PROJECT_SOURCE_DIR}/src"
       "${PROJECT_SOURCE_DIR}/include"
-    DEPENDS ${COV_TEST_TARGET}
+    DEPENDS ${COVERAGE_BUILD_TARGETS}
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     USES_TERMINAL
     VERBATIM
