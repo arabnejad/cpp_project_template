@@ -1,11 +1,13 @@
+#include "calculator.h"
+
 #include <iostream>
-#include "app.h"
 
 int main() {
-  MATH m;
-  int  a      = 2;
-  int  b      = 3;
-  int  result = m.add(a, b);
-  std::cout << "Sum of " << a << " and " << b << " is " << result << std::endl;
+  const Calculator calculator;
+  const int        lhs    = 2;
+  const int        rhs    = 3;
+  const int        result = calculator.add(lhs, rhs);
+
+  std::cout << "Sum of " << lhs << " and " << rhs << " is " << result << '\n';
   return 0;
 }

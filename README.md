@@ -7,13 +7,13 @@ sets sensible compiler warnings, provides formatting and test targets, and inclu
 
 ```text
 include/        # Public headers
-  app.h
+  calculator.h
 src/            # Sources for the app and library
-  app.cpp
+  calculator.cpp
   main.cpp
 tests/          # Unit tests (GoogleTest)
   CMakeLists.txt
-  test_math_class.cpp
+  calculator_test.cpp
   cmake/
     test_distclean.cmake
 cmake/          # CMake helper modules
@@ -177,7 +177,8 @@ cmake -S . -B build
 cmake --build build --target app
 ```
 
-The `app` executable is built from `src/main.cpp` and links a small library (`app_lib`) that contains the `MATH` class.
+The `app` executable is built from `src/main.cpp` and links a small library
+(`app_lib`) that contains the `Calculator` class.
 
 ## Compiler settings
 

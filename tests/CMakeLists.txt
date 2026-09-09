@@ -43,6 +43,14 @@ gtest_discover_tests(app_tests
   DISCOVERY_TIMEOUT 60
 )
 
+add_test(NAME application_smoke
+  COMMAND app
+)
+set_tests_properties(application_smoke PROPERTIES
+  WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+  PASS_REGULAR_EXPRESSION "Sum of 2 and 3 is 5"
+)
+
 add_test(NAME distclean_safety
   COMMAND ${CMAKE_COMMAND}
     -DDISTCLEAN_SCRIPT=${PROJECT_SOURCE_DIR}/cmake/distclean.cmake
