@@ -1,17 +1,11 @@
-# Ignore CMake Doxygen files anywhere in the project
+# Ignore generated Doxygen integration files
 CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
-**/CMakeDoxyfile.in
-**/CMakeDoxygenDefaults.cmake
-# Ignore build artifacts
-build/
-build-development/
-build-release/
-build-sanitizers/
-build-coverage/
 
-# Ignore generated documentation
-docs/
+# Ignore root-level build trees
+/build/
+/build-*/
+/cmake-build-*/
 
 # Ignore CMake generated files
 CMakeFiles/
@@ -19,6 +13,8 @@ CMakeCache.txt
 cmake_install.cmake
 CTestTestfile.cmake
 Testing/
+compile_commands.json
+/CMakeUserPresets.json
 
 # Ignore IDE/editor files
 *.swp
@@ -28,7 +24,6 @@ Testing/
 *.DS_Store
 .vscode/
 .idea/
-CMakeUserPresets.json
 
 # Ignore test output
 *.log
@@ -46,13 +41,16 @@ CMakeUserPresets.json
 # Ignore _deps directories anywhere in the project
 **/_deps/
 
-*.sh
-
-# Ignore gcovr coverage output
+# Ignore coverage data and reports
+*.gcda
+*.gcno
+*.profdata
+*.profraw
+/coverage/
 coverage_gcovr.*.html
 coverage_gcovr.css
 coverage_gcovr.functions.html
 coverage_gcovr.html
 
 # Ignore cppcheck output
-cppcheck_checkers.txt
+/cppcheck_checkers.txt
