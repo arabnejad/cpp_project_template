@@ -67,6 +67,35 @@ Run `cmake --list-presets`, `cmake --build --list-presets`, or
 belong in the ignored `CMakeUserPresets.json`; shared workflows belong in the
 tracked `CMakePresets.json`.
 
+## Continuous integration
+
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs for pushes, pull
+requests, and manual dispatches. It uses the same checked-in CMake presets as the
+documented local workflows:
+
+| Job | Configuration |
+| --- | --- |
+| Debug | `development` preset with both GCC and Clang |
+| Release | `release` preset with GCC |
+| Sanitizers | `sanitizers` preset with GCC |
+| Formatting and static analysis | `clang_format_check` and `cppcheck` targets |
+| Coverage | `coverage-console` and `coverage-html` build presets |
+
+All compiled CI configurations enable `WARNINGS_AS_ERRORS`. Each job receives
+only read access to repository contents, and a newer run cancels an older run for
+the same workflow and Git reference. Third-party actions are pinned to immutable
+release commit hashes and checkout credentials are not persisted.
+
+The coverage job uploads `build-coverage/coverage/` as the `coverage-html`
+artifact after the tests and both report generators succeed.
+
+GitHub Actions references:
+
+- [Workflow syntax, permissions, and concurrency](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
+- [Workflow artifacts](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflow-artifacts)
+- [Checkout action](https://github.com/actions/checkout)
+- [Upload Artifact action](https://github.com/actions/upload-artifact)
+
 ## GNU Make convenience interface
 
 The root `Makefile` provides short developer commands while keeping CMake and
